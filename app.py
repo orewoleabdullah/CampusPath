@@ -185,6 +185,53 @@ def init_db():
 init_db()
 
 
+def ensure_configured_admin():
+    username = os.environ.get("ADMIN_USERNAME", "").strip()
+    password = os.environ.get("ADMIN_PASSWORD", "")
+    if not username and not password:
+        return
+    if not username or not password:
+        raise RuntimeError(
+            "Set both ADMIN_USERNAME and ADMIN_PASSWORD."
+        )
+    if len(username) > 50 or len(password) < 12:
+        raise RuntimeError(
+            "Admin username must be at most 50 characters, "
+            "and admin password must be at least 12 characters."
+        )
+
+    connection = get_db_connection()
+    try:
+        password_hash = generate_password_hash(password)
+        existing = connection.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+        if existing:
+            connection.execute(
+                """
+                UPDATE users
+                SET is_admin = 1, password_hash = ?
+                WHERE username = ?
+                """,
+                (password_hash, username),
+            )
+        else:
+            connection.execute(
+                """
+                INSERT INTO users (username, password_hash, is_admin)
+                VALUES (?, ?, 1)
+                """,
+                (username, password_hash),
+            )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+ensure_configured_admin()
+
+
 @app.cli.command("promote-admin")
 @click.argument("username")
 def promote_admin(username):
