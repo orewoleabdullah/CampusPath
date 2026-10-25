@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | CampusPath</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">Campus<span>Path</span></a>
+        <nav class="nav-actions" aria-label="Admin navigation">
+            <span class="nav-label">Admin: {{ session.get("username") }}</span>
+            <a class="nav-link" href="/">Explore</a>
+            <form action="{{ url_for('logout') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="nav-button" type="submit">Log out</button>
+            </form>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container dashboard-container">
+        <section class="hero">
+            <p class="eyebrow">LISTING MANAGEMENT</p>
+            <h1>Admin <span>dashboard.</span></h1>
+            <p class="hero-description">
+                Create and manage the opportunities shown to students.
+            </p>
+            <a class="save-button" href="{{ url_for('create_opportunity') }}">
+                Add opportunity
+            </a>
+        </section>
+
+        <section class="opportunities-section">
+            <div class="section-heading">
+                <h2>Opportunities</h2>
+                <span class="count">{{ opportunities|length }} total</span>
+            </div>
+
+            {% if opportunities %}
+                <div class="opportunity-grid dashboard-cards">
+                    {% for opportunity in opportunities %}
+                        <article class="opportunity-card dashboard-card">
+                            <span class="category-tag">{{ opportunity.category }}</span>
+                            <h3>{{ opportunity.title }}</h3>
+                            <p class="organization">{{ opportunity.organization }}</p>
+                            <p class="opportunity-deadline">
+                                Deadline: {{ opportunity.deadline }}
+                            </p>
+                            <p>
+                                {% if opportunity.is_published %}
+                                    Published
+                                {% else %}
+                                    Draft / unpublished
+                                {% endif %}
+                                · {{ opportunity.saved_count }} saved
+                            </p>
+                            <div class="card-actions">
+                                <a class="view-link"
+                                   href="{{ url_for('edit_opportunity', opportunity_id=opportunity.id) }}">
+                                    Edit
+                                </a>
+                                <form
+                                    action="{{ url_for('toggle_opportunity_published', opportunity_id=opportunity.id) }}"
+                                    method="post"
+                                >
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="save-button">
+                                        {% if opportunity.is_published %}Unpublish{% else %}Publish{% endif %}
+                                    </button>
+                                </form>
+                                <form
+                                    action="{{ url_for('delete_opportunity', opportunity_id=opportunity.id) }}"
+                                    method="post"
+                                    onsubmit="return confirm('Permanently delete this opportunity? This cannot be undone.');"
+                                >
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button
+                                        type="submit"
+                                        class="unsave-button"
+                                        {% if opportunity.is_published %}disabled title="Unpublish this opportunity before deleting it."
+                                        {% elif opportunity.saved_count %}disabled title="Students have saved this listing, so it cannot be deleted."{% endif %}
+                                    >Delete</button>
+                                </form>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">No opportunities yet. Add one to create a draft.</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

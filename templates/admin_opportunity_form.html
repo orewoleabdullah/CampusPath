@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ heading }} | CampusPath</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">Campus<span>Path</span></a>
+        <nav class="nav-actions" aria-label="Admin navigation">
+            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin dashboard</a>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="auth-container">
+        <h1>{{ heading }}</h1>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label for="title">Title</label>
+            <input id="title" name="title" maxlength="200" required
+                   value="{{ opportunity.get('title', '') }}">
+
+            <label for="organization">Organization</label>
+            <input id="organization" name="organization" maxlength="120" required
+                   value="{{ opportunity.get('organization', '') }}">
+
+            <label for="category">Category</label>
+            <input id="category" name="category" maxlength="50" required
+                   value="{{ opportunity.get('category', '') }}">
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description" maxlength="5000"
+                      rows="5" required>{{ opportunity.get('description', '') }}</textarea>
+
+            <label for="deadline">Deadline</label>
+            <input id="deadline" name="deadline" type="date" required
+                   value="{{ opportunity.get('deadline', '') }}">
+
+            <label for="application_url">Application URL</label>
+            <input id="application_url" name="application_url" type="url"
+                   maxlength="2048" required
+                   value="{{ opportunity.get('application_url', '') }}">
+
+            <button type="submit">{{ heading }}</button>
+        </form>
+        <p><a href="{{ url_for('admin_dashboard') }}">Cancel and return to admin</a></p>
+    </main>
+</body>
+</html>

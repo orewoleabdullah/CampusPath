@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusPath | Student Opportunities</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">Campus<span>Path</span></a>
+        <nav class="nav-actions" aria-label="Account">
+            {% if session.get("username") %}
+                <span class="nav-label">Hi, {{ session["username"] }}</span>
+                <a class="nav-link" href="{{ url_for('dashboard') }}">My dashboard</a>
+                {% if is_admin %}
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Admin</a>
+                {% endif %}
+                <form action="{{ url_for('logout') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="nav-button" type="submit">Log out</button>
+                </form>
+            {% else %}
+                <a class="nav-link" href="{{ url_for('login') }}">Log in</a>
+                <a class="nav-button" href="{{ url_for('register') }}">Create account</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">YOUR FUTURE, ORGANIZED</p>
+            <h1>Find opportunities.<br><span>Make your next move.</span></h1>
+            <p class="hero-description">
+                Discover scholarships, internships, and competitions
+                worth pursuing.
+            </p>
+        </section>
+
+        <section class="opportunities-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">EXPLORE</p>
+                    <h2>Opportunities for you</h2>
+                </div>
+                <span class="count">{{ opportunities|length }} listed</span>
+            </div>
+
+            <div class="filters">
+                <input
+                    type="search"
+                    id="search"
+                    placeholder="Search opportunities or organizations..."
+                    aria-label="Search opportunities"
+                >
+
+                <select id="category" aria-label="Filter by category">
+                    <option value="all">All categories</option>
+                    <option value="scholarship">Scholarships</option>
+                    <option value="internship">Internships</option>
+                    <option value="competition">Competitions</option>
+                    <option value="fellowship">Fellowships</option>
+                </select>
+            </div>
+
+            <div class="opportunity-grid" id="opportunity-grid">
+                {% for opportunity in opportunities %}
+                    <article
+                        class="opportunity-card {% if opportunity.deadline < today|string %}expired-card{% endif %}"
+                        data-title="{{ opportunity.title|lower }}"
+                        data-organization="{{ opportunity.organization|lower }}"
+                        data-category="{{ opportunity.category|lower }}"
+                    >
+                        <div class="card-top">
+                            <span class="category-tag">
+                                {{ opportunity.category }}
+                            </span>
+                            <span class="card-symbol" aria-hidden="true">↗</span>
+                        </div>
+
+                        <h3>{{ opportunity.title }}</h3>
+                        <p class="organization">
+                            {{ opportunity.organization }}
+                        </p>
+                        <p class="description">
+                            {{ opportunity.description }}
+                        </p>
+
+                        <div class="card-footer">
+                            <div class="deadline">
+                                <span>APPLICATION DEADLINE</span>
+                                <strong>{{ opportunity.deadline }}</strong>
+                                {% set deadline = opportunity.deadline | deadline_info %}
+                                <p class="deadline-label {{ deadline['class'] }}">
+                                    {{ deadline["text"] }}
+                                </p>
+                            </div>
+                            <div class="card-actions">
+                                <a
+                                    href="{{ opportunity.application_url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="view-link"
+                                >Apply ↗</a>
+
+                                {% if session.get("user_id") %}
+                                    {% if opportunity.id in saved_ids %}
+                                        <form
+                                            action="{{ url_for('unsave_opportunity', opportunity_id=opportunity.id) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Remove this opportunity from your saved list?');"
+                                        >
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="unsave-button">
+                                                Unsave
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form
+                                            action="{{ url_for('save_opportunity', opportunity_id=opportunity.id) }}"
+                                            method="POST"
+                                        >
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="save-button">Save</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ url_for('login') }}" class="save-button">Log in to save</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% else %}
+                    <p class="empty-state">No opportunities have been added yet.</p>
+                {% endfor %}
+            </div>
+
+            <p id="no-results" class="empty-state" hidden>
+                No matching opportunities. Try another search or category.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>CampusPath · Built to help students move forward.</p>
+    </footer>
+</body>
+</html>

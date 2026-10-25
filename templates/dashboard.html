@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard | CampusPath</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="logo">Campus<span>Path</span></a>
+        <nav class="dashboard-nav" aria-label="Dashboard navigation">
+            <span>Hello, {{ session.get("username") }}</span>
+            <a href="/">Explore</a>
+            {% if session.get("is_admin") %}
+                <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+            {% endif %}
+            <form action="{{ url_for('logout') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="save-button">Log out</button>
+            </form>
+        </nav>
+    </header>
+
+    <main class="container dashboard-container">
+        <section class="hero">
+            <p class="eyebrow">YOUR PERSONAL SPACE</p>
+            <h1>My <span>opportunities.</span></h1>
+            <p class="hero-description">
+                Keep track of the opportunities you're pursuing.
+            </p>
+        </section>
+
+        <section class="opportunities-section">
+            <div class="section-heading">
+                <h2>Saved opportunities</h2>
+                <span class="count">{{ opportunities|length }} saved</span>
+            </div>
+
+            <div class="dashboard-summary">
+                <div class="summary-card">
+                    <h3>Total Saved</h3>
+                    <p id="total-saved">0</p>
+                </div>
+
+                <div class="summary-card">
+                    <h3>Preparing</h3>
+                    <p id="total-preparing">0</p>
+                </div>
+
+                <div class="summary-card">
+                    <h3>Applied</h3>
+                    <p id="total-applied">0</p>
+                </div>
+
+                <div class="summary-card">
+                    <h3>Accepted</h3>
+                    <p id="total-accepted">0</p>
+                </div>
+            </div>
+
+            <div class="dashboard-filter">
+                <label for="status-filter">Filter by status</label>
+                <select id="status-filter">
+                    <option value="all">All saved opportunities</option>
+                    <option value="Interested">Interested</option>
+                    <option value="Preparing">Preparing</option>
+                    <option value="Applied">Applied</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+
+            <div class="dashboard-filter">
+                <label for="sort-order">Sort opportunities</label>
+                <select id="sort-order">
+                    <option value="deadline">Earliest deadline</option>
+                    <option value="saved">Recently saved</option>
+                </select>
+            </div>
+
+            {% if opportunities %}
+                <div class="opportunity-grid dashboard-cards">
+                    {% for opportunity in opportunities %}
+                        <article
+                            class="opportunity-card dashboard-card"
+                            data-status="{{ opportunity.status }}"
+                            data-deadline="{{ opportunity.deadline }}"
+                            data-saved="{{ opportunity.saved_at }}"
+                        >
+                            <span class="category-tag">
+                                {{ opportunity.category }}
+                            </span>
+
+                            <h3>{{ opportunity.title }}</h3>
+                            <p class="organization">
+                                {{ opportunity.organization }}
+                            </p>
+                            <p class="opportunity-deadline">
+                                Deadline: {{ opportunity.deadline }}
+                            </p>
+                            {% set deadline = opportunity.deadline | deadline_info %}
+                            <p class="deadline-label {{ deadline['class'] }}">
+                                {{ deadline['text'] }}
+                            </p>
+
+                            <form
+                                action="{{ url_for('update_status', saved_id=opportunity.saved_id) }}"
+                                method="POST"
+                                class="status-form"
+                            >
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <label for="status-{{ opportunity.saved_id }}">
+                                    Application status
+                                </label>
+
+                                <select
+                                    id="status-{{ opportunity.saved_id }}"
+                                    name="status"
+                                >
+                                    {% for status in [
+                                        "Interested", "Preparing", "Applied",
+                                        "Accepted", "Rejected"
+                                    ] %}
+                                        <option
+                                            value="{{ status }}"
+                                            {% if opportunity.status == status %}selected{% endif %}
+                                        >{{ status }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <button type="submit">Update status</button>
+                            </form>
+
+                            <a
+                                href="{{ opportunity.application_url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="view-link"
+                            >Visit application page ↗</a>
+
+                            <form
+                                action="{{ url_for('unsave_opportunity', opportunity_id=opportunity.id) }}"
+                                method="POST"
+                                onsubmit="return confirm('Remove this opportunity from your saved list?');"
+                            >
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="unsave-button">
+                                    Unsave
+                                </button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">
+                    You haven't saved any opportunities yet.
+                    <a href="/">Explore opportunities</a> to get started.
+                </p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
