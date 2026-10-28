@@ -1,5 +1,5 @@
 # CampusPath
-**Video Demo:** [Add your video link here]
+**Video Demo:** https://www.youtube.com/watch?v=692w0QzLad4
 
 ## Description
 CampusPath is a web application designed to help university students discover and manage opportunities such as scholarships, internships, competitions, and fellowships. Students can browse available opportunities, search by title, filter by category, save opportunities they are interested in, and track their application progress.
